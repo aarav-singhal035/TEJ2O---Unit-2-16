@@ -1,42 +1,54 @@
-/* Copyright (c) 2025 All rights reserved
- *
- * Created by: Aarav Singhal
- * Created on: Dec 2025
- * This program uses the bluetooth radios
-*/
+let distance = 0
+let state = ""
 
-// variables
-let distanceToObject: number = 0
-
-// setup
 radio.setGroup(247)
+radio.setTransmitPower(7)
 basic.showIcon(IconNames.Happy)
 
-// receive
-radio.onReceivedString(function (receivedString) {
-    basic.clearScreen()
-    basic.showString(receivedString)
-    basic.showIcon(IconNames.Happy)
-})
-
-// loop
-while (true) {
-    distanceToObject = sonar.ping(
+basic.forever(function () {
+    distance = sonar.ping(
         DigitalPin.P12,
         DigitalPin.P13,
         PingUnit.Centimeters
     )
 
-    // if distance is less than 5
-    if (distanceToObject < 5) {
-        basic.clearScreen()
-        basic.showNumber(distanceToObject)
-        radio.sendString("Too close")
-        basic.pause(1000)
-    } else {
-        basic.clearScreen()
-        basic.showNumber(distanceToObject)
-        radio.sendString("")
-        basic.pause(1000)
+    // Ignore bad readings
+    if (distance <= 0 || distance > 400) {
+        basic.pause(200)
+        return
     }
-}
+
+    if (distance <= 5) {
+        if (state != "close") {
+            radio.sendString("Too close")
+            state = "close"
+        }
+    } else {
+        if (state != "safe") {
+            radio.sendString("Safe")
+            state = "safe"
+        }
+    }
+
+    basic.pause(300)
+})
+
+
+
+
+
+
+// this is recivere code
+radio.setGroup(247)
+basic.showIcon(IconNames.Heart)
+
+radio.onReceivedString(function (msg) {
+    basic.clearScreen()
+
+    if (msg == "Too close") {
+        basic.showIcon(IconNames.No)
+        basic.showString("WARNING")
+    } else if (msg == "Safe") {
+        basic.showIcon(IconNames.Yes)
+    }
+})
